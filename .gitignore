@@ -1,0 +1,9 @@
+.idea
+temp/
+output/
+.pytest_cache/
+__pycache__/
+*/__pycache__/
+tests/.pytest_cache/
+bin/kokoro-v1.0.onnx
+bin/voices-v1.0.bin

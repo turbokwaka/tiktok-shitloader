@@ -9,10 +9,22 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter
 
 import os
 
-OUTPUT_DIRECTORY = "output"
-def make_caption_image(text, font_path="fonts/Montserrat-Bold.ttf", font_size=72,
-                       text_color=(255, 214, 10), glow_color=(255, 90, 0),
-                       padding_x=50, padding_y=30):
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+OUTPUT_DIRECTORY = os.path.join(BASE_DIR, "output")
+FONTS_DIR = os.path.join(BASE_DIR, "assets", "fonts")
+
+
+def make_caption_image(
+    text,
+    font_path=os.path.join(FONTS_DIR, "Montserrat-Bold.ttf"),
+    font_size=72,
+    text_color=(255, 214, 10),
+    glow_color=(255, 90, 0),
+    padding_x=50,
+    padding_y=30,
+):
     font = ImageFont.truetype(font_path, font_size)
 
     dummy_img = Image.new("RGBA", (1, 1))
@@ -40,6 +52,8 @@ def make_caption_image(text, font_path="fonts/Montserrat-Bold.ttf", font_size=72
     draw.text(text_pos, text, font=font, fill=text_color + (255,))
 
     return img
+
+
 def split_segments_to_short_phrases(result, words_per_chunk=3):
     short_subs = []
 
@@ -49,7 +63,7 @@ def split_segments_to_short_phrases(result, words_per_chunk=3):
             continue
 
         for i in range(0, len(words), words_per_chunk):
-            chunk = words[i:i + words_per_chunk]
+            chunk = words[i : i + words_per_chunk]
             start_time = float(chunk[0]["start"])
             end_time = float(chunk[-1]["end"])
             text = " ".join([w["text"].strip() for w in chunk])
@@ -57,9 +71,16 @@ def split_segments_to_short_phrases(result, words_per_chunk=3):
 
     return short_subs
 
+
 def transcribe_and_subtitle_video(
-        video_path, output_path, font_path="fonts/Montserrat-Bold.ttf",
-        font_size=32, words_per_chunk=2, lang="en", model_name="tiny"):
+    video_path,
+    output_path,
+    font_path=os.path.join(FONTS_DIR, "Montserrat-Bold.ttf"),
+    font_size=32,
+    words_per_chunk=2,
+    lang="en",
+    model_name="tiny",
+):
     if not os.path.exists(video_path):
         print(f"Помилка: Відео файл не знайдено за шляхом '{video_path}'")
         return
@@ -68,11 +89,7 @@ def transcribe_and_subtitle_video(
     result = whisper.transcribe(model, video_path, language=lang, verbose=False)
     subtitles = split_segments_to_short_phrases(result, words_per_chunk)
 
-    clip = (
-        VideoFileClip(f"{video_path}")
-        .subclipped(0, None)
-        .with_volume_scaled(0.8)
-    )
+    clip = VideoFileClip(f"{video_path}").subclipped(0, None).with_volume_scaled(0.8)
 
     subtitle_clips = []
     for (start, end), text in subtitles:
@@ -83,11 +100,9 @@ def transcribe_and_subtitle_video(
             .with_start(float(start))
             .with_duration(float(end - start))
             .with_position(
-                lambda t: (
-                    "center",
-                    clip.h / 2 + 100 + 50 * (1 - min(1, t / 0.1))
-                )
-            ).resized(lambda t: 0.7 + 0.3 * min(1, t / 0.05))
+                lambda t: ("center", clip.h / 2 + 100 + 50 * (1 - min(1, t / 0.1)))
+            )
+            .resized(lambda t: 0.7 + 0.3 * min(1, t / 0.05))
         )
         subtitle_clips.append(txt)
 

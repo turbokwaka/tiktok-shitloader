@@ -1,21 +1,35 @@
 # voice_overlay.py
-
+import logging
+import os
 import subprocess
 from moviepy import VideoFileClip, AudioFileClip, CompositeAudioClip
 
-INPUT_TEXT_PATH = "input/input.txt"
-INPUT_VIDEO_PATH = "bg_videos/1.mp4"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+INPUT_TEXT_PATH = os.path.join(BASE_DIR, "input", "input.txt")
+INPUT_VIDEO_PATH = os.path.join(BASE_DIR, "input", "bg_videos", "1.mp4")
+TEMP_PATH = os.path.join(BASE_DIR, "temp")
+
 
 def generate_tts(input_txt, output_wav):
     cmd = [
         "kokoro-tts",
         input_txt,
         output_wav,
-        "--model", "bin/kokoro-v1.0.onnx",
-        "--voices", "bin/voices-v1.0.bin",
-        "--voice", "af_heart"
+        "--model",
+        os.path.join(BASE_DIR, "bin", "kokoro-v1.0.onnx"),
+        "--voices",
+        os.path.join(BASE_DIR, "bin", "voices-v1.0.bin"),
+        "--voice",
+        "af_heart",
     ]
-    subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        subprocess.run(
+            cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        )
+    except subprocess.CalledProcessError as e:
+        logging.error(e.output)
+
 
 def merge(video_path, audio_path, output_path):
     videoclip = VideoFileClip(video_path)
